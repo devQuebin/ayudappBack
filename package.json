@@ -1,0 +1,29 @@
+{
+  "name": "ayudappback",
+  "version": "1.0.0",
+  "description": "Back end proyecto Ayudapp",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devQuebin/ayudappBack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/devQuebin/ayudappBack/issues"
+  },
+  "homepage": "https://github.com/devQuebin/ayudappBack#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
