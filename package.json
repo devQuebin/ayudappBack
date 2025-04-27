@@ -15,13 +15,16 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/devQuebin/ayudappBack/issues"
   },
   "homepage": "https://github.com/devQuebin/ayudappBack#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "firebase": "^11.6.1",
+    "firebase-admin": "^13.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
