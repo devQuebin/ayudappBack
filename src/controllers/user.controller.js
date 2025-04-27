@@ -1,54 +1,116 @@
-const User = require('./models/User');
+import { collection, doc, getDoc, addDoc, updateDoc, deleteDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { addCreatedTimestamps } from '../utils/firestore_utils.js';
+import db from '../../firebase_config.js';
 
 
-const createUser = async (req, res) => {
+// Create a new user
+export const createUser = async (req, res) => {
     try {
-        const { userId, name, lastName, email, campaignRecord, donationRecord, password } = req.body;
-
-        const newUser = new User({
-            userId,
-            name,
-            lastName,
-            email,
-            password,
-            campaignRecord,
-            donationRecord,
-        });
-
-        const savedUser = await newUser.save();
-        res.status(201).json(savedUser);
+        const body = req.body;
+        const userRef = collection(db, 'user').withConverter(addCreatedTimestamps);
+        await addDoc(userRef, body);
+        res.status(201).json({ message: "User created successfully", id: userRef.id });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error creating user' });
+        console.error("Error creating user:", error);
+        res.status(500).json({ message: "Error creating user", error: error.message });
     }
 };
 
-const getAllUsers = async (req, res) => {
+// Get all users
+export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find();
+        const usersRef = collection(db, "user").withConverter(addCreatedTimestamps);
+        const querySnapshot = await getDocs(usersRef);
+        const users = [];
+        querySnapshot.forEach((doc) => {
+            users.push({ id: doc.id, ...doc.data() });
+        });
         res.json(users);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching users' });
+        console.error("Error fetching users:", error);
+        res.status(500).json({ message: "Error fetching users" });
     }
 };
 
-const getUserById = async (req, res) => {
+// Get user by ID
+export const getUserById = async (req, res) => {
     try {
-        const { id } = req.params;
-        const user = await User.findById(id);
+        const userId = req.params["id"];
+        const docRef = doc(db, "user", userId).withConverter(addCreatedTimestamps);
+        const docSnap = await getDoc(docRef);
 
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        res.json(user);
+        if (docSnap.exists()) {
+            res.json({ id: docSnap.id, ...docSnap.data() });
+        } else {
+            res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+        }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching user' });
+        console.error("Error fetching user:", error);
+        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
     }
 };
 
-module.exports = {
-    createUser,
-    getAllUsers,
-    getUserById
+// Update user
+export const updateUser = async (req, res) => {
+    try {
+        const userId = req.params["id"];
+        const upRef = doc(db, "user", userId).withConverter(addCreatedTimestamps);
+        const body = req.body;
+
+        const docSnap = await getDoc(upRef);
+        if (!docSnap.exists()) {
+            return res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+        }
+
+        await updateDoc(upRef, { ...body, updated_at: serverTimestamp() });
+        res.status(200).json({ message: "User updated successfully", id: userId });
+    } catch (error) {
+        console.error("Error updating user:", error);
+        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
+    }
+};
+
+// Delete user
+export const deleteUser = async (req, res) => {
+    try {
+        const userId = req.params["id"];
+        const docRef = doc(db, "user", userId).withConverter(addCreatedTimestamps);
+
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+            return res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+        }
+
+        await deleteDoc(docRef);
+        res.status(200).json({ message: "User deleted successfully", id: userId });
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
+    }
+};
+
+// Get users by campaign
+export const getUsersByCampaign = async (req, res) => {
+    try {
+        const campaignId = req.params["campaign_record"];
+        const usersRef = collection(db, "user").withConverter(addCreatedTimestamps);
+        const querySnapshot = await getDocs(usersRef);
+        const users = [];
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (Array.isArray(data.campaignRecord) && data.campaignRecord.includes(campaignId)) {
+                users.push({ id: doc.id, ...data });
+            }
+        });
+
+        if (users.length === 0) {
+            return res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+        }
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error fetching users by campaign:", error);
+        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
+    }
 };
