@@ -1,14 +1,22 @@
-const express = require('express');
-const db = require('../firebase_config');
+import express from 'express';
+import db from '../firebase_config.js';
+import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
+
+
 const app = express();
 
+
 app.get("/", async (req, res) => {
-    const data = {
-        name: 'Los Angeles',
-        state: 'CA',
-        country: 'USA'
-    };
-    const respuesta = await db.collection('user').doc('LA').set(data);
+
+    const docRef = doc(db, "user", "SF");
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        console.log("Document data:", docSnap.data());
+    } else {
+        // docSnap.data() will be undefined in this case
+        console.log("No such document!");
+    }
     res.send(respuesta)
 })
 
