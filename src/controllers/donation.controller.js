@@ -58,7 +58,7 @@ export const getAllDonations = async (req, res) => {
 
 export const getDonationById = async (req, res) => {
   try {
-    const donationId = req.params["id"];
+    const donationId = req.params["donationId"];
     const docRef = doc(db, "donation", donationId).withConverter(
       addCreatedTimestamps
     );
@@ -111,7 +111,7 @@ export const createDonation = async (req, res) => {
 
 export const updateDonation = async (req, res) => {
   try {
-    const donationId = req.params["id"];
+    const donationId = req.params["donationId"];
     const upRef = doc(db, "donation", donationId).withConverter(
       addCreatedTimestamps
     );
@@ -129,7 +129,10 @@ export const updateDonation = async (req, res) => {
     // Excluir created_at del body si viene del frontend
     const { created_at, ...fieldsToUpdate } = body;
 
-    await updateDoc(upRef, { ...fieldsToUpdate, updated_at: serverTimestamp() });
+    await updateDoc(upRef, {
+      ...fieldsToUpdate,
+      updated_at: serverTimestamp(),
+    });
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.UPDATE,
       data: { id: donationId },
@@ -147,7 +150,7 @@ export const updateDonation = async (req, res) => {
 
 export const deleteDonation = async (req, res) => {
   try {
-    const donationId = req.params["id"];
+    const donationId = req.params["donationId"];
     const docRef = doc(db, "donation", donationId).withConverter(
       addCreatedTimestamps
     );

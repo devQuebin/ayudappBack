@@ -65,7 +65,7 @@ export const getAllUsers = async (req, res) => {
 // Get user by ID
 export const getUserById = async (req, res) => {
   try {
-    const userId = req.params["id"];
+    const userId = req.params["userId"];
     const docRef = doc(db, "user", userId).withConverter(addCreatedTimestamps);
     const docSnap = await getDoc(docRef);
 
@@ -95,7 +95,7 @@ export const getUserById = async (req, res) => {
 // Update user
 export const updateUser = async (req, res) => {
   try {
-    const userId = req.params["id"];
+    const userId = req.params["userId"];
     const docRef = doc(db, "user", userId).withConverter(addCreatedTimestamps);
     const body = req.body;
 
@@ -127,7 +127,7 @@ export const updateUser = async (req, res) => {
 // Delete user
 export const deleteUser = async (req, res) => {
   try {
-    const userId = req.params["id"];
+    const userId = req.params["userId"];
     const docRef = doc(db, "user", userId).withConverter(addCreatedTimestamps);
 
     const docSnap = await getDoc(docRef);
@@ -158,7 +158,7 @@ export const deleteUser = async (req, res) => {
 // Get users by campaign
 export const getUsersByCampaign = async (req, res) => {
   try {
-    const campaignId = req.params["campaign_record"];
+    const campaignId = req.params["campaignRecord"];
     const usersRef = collection(db, "user").withConverter(addCreatedTimestamps);
     const querySnapshot = await getDocs(usersRef);
     const users = [];

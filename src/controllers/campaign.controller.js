@@ -53,9 +53,9 @@ export const getAllCampaigns = async (req, res) => {
       const data = doc.data();
       let match = true;
 
-      // Filtrado por año de campaña (start_date)
+      // Filtrado por año de campaña (startDate)
       if (campaignStartDate) {
-        const startDate = data.start_date ? new Date(data.start_date) : null;
+        const startDate = data.startDate ? new Date(data.startDate) : null;
         if (
           !startDate ||
           startDate.getFullYear() !== Number(campaignStartDate)
@@ -66,7 +66,7 @@ export const getAllCampaigns = async (req, res) => {
 
       // Filtrado por mes de inicio
       if (startMonth) {
-        const startDate = data.start_date ? new Date(data.start_date) : null;
+        const startDate = data.startDate ? new Date(data.startDate) : null;
         if (!startDate || startDate.getMonth() + 1 !== Number(startMonth)) {
           match = false;
         }
@@ -74,7 +74,7 @@ export const getAllCampaigns = async (req, res) => {
 
       // Filtrado por mes de fin
       if (endMonth) {
-        const endDate = data.end_date ? new Date(data.end_date) : null;
+        const endDate = data.endDate ? new Date(data.endDate) : null;
         if (!endDate || endDate.getMonth() + 1 !== Number(endMonth)) {
           match = false;
         }
@@ -102,7 +102,7 @@ export const getAllCampaigns = async (req, res) => {
 
 export const getCampaignById = async (req, res) => {
   try {
-    const campaignId = req.params["id"];
+    const campaignId = req.params["campaignId"];
     const docRef = doc(db, "campaign", campaignId).withConverter(
       addCreatedTimestamps
     );
@@ -133,7 +133,7 @@ export const getCampaignById = async (req, res) => {
 
 export const updateCampaign = async (req, res) => {
   try {
-    const campaignId = req.params["id"];
+    const campaignId = req.params["campaignId"];
     const docRef = doc(db, "campaign", campaignId).withConverter(
       addCreatedTimestamps
     );
@@ -172,7 +172,7 @@ export const updateCampaign = async (req, res) => {
 
 export const deleteCampaign = async (req, res) => {
   try {
-    const campaignId = req.params["id"];
+    const campaignId = req.params["campaignId"];
     const docRef = doc(db, "campaign", campaignId).withConverter(
       addCreatedTimestamps
     );
