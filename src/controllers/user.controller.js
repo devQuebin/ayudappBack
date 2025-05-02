@@ -158,7 +158,7 @@ export const deleteUser = async (req, res) => {
 // Get users by campaign
 export const getUsersByCampaign = async (req, res) => {
   try {
-    const campaignId = req.params["campaignRecord"];
+    const campaignId = req.params["campaignId"];
     const usersRef = collection(db, "user").withConverter(addCreatedTimestamps);
     const querySnapshot = await getDocs(usersRef);
     const users = [];
