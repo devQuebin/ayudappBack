@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, updateDoc, deleteDoc, getDocs, addDoc, query, where } from 'firebase/firestore';
-import db from '../../firebase_config.js';
+import db from '../config/firebase_config.js';
 import { addCreatedTimestamps } from '../utils/firestore_utils.js';
 
 export const getAllDonations = async (req, res) => {
