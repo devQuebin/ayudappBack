@@ -38,7 +38,7 @@ app.get("/", (req, res) => {
 });
 
 app.use((req, res, next) => {
-  res.status(404).json({
+  res.status(STATUS_CODES.NOT_FOUND).json({
     error: "Not Found",
     message: "La ruta solicitada no existe.",
   });
