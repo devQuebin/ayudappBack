@@ -1,109 +1,181 @@
-import { collection, doc, getDoc, updateDoc, deleteDoc, getDocs, addDoc, query, where } from 'firebase/firestore';
-import db from '../../firebase_config.js';
-import { addCreatedTimestamps } from '../utils/firestore_utils.js';
+import {
+  collection,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import db from "../config/firebase_config.js";
+import { addCreatedTimestamps } from "../utils/firestore_utils.js";
+import { STATUS_CODES } from "../constants/statusCodes.constants.js";
+import { successResponse, errorResponse } from "../utils/response_utils.js";
+import {
+  DONATION_ERROR_MESSAGES,
+  DONATION_SUCCESS_MESSAGES,
+} from "../constants/messages.constants.js";
 
 export const getAllDonations = async (req, res) => {
-    try {
-        const { mes, año } = req.query;
-        let donationsRef = collection(db, "donation").withConverter(addCreatedTimestamps);
+  try {
+    const { mes, año } = req.query;
+    let donationsRef = collection(db, "donation").withConverter(
+      addCreatedTimestamps
+    );
+    let donations = [];
 
-        let donations = [];
+    const querySnapshot = await getDocs(donationsRef);
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      let match = true;
+      if (mes && año) {
+        match = data.created_at === `${mes} ${año}`;
+      } else if (mes) {
+        match = data.created_at.startsWith(mes);
+      } else if (año) {
+        match = data.created_at.endsWith(año);
+      }
+      if (match) {
+        donations.push({ id: doc.id, ...data });
+      }
+    });
 
-        if (!mes && !año) {
-            const querySnapshot = await getDocs(donationsRef);
-            querySnapshot.forEach((doc) => {
-                donations.push({ id: doc.id, ...doc.data() });
-            });
-            return res.json(donations);
-        }
-
-        const querySnapshot = await getDocs(donationsRef);
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            let match = true;
-            if (mes && año) {
-                match = data.created_at === `${mes} ${año}`;
-            } else if (mes) {
-                match = data.created_at.startsWith(mes);
-            } else if (año) {
-                match = data.created_at.endsWith(año);
-            }
-            if (match) {
-                donations.push({ id: doc.id, ...data });
-            }
-        });
-
-        res.json(donations);
-    } catch (error) {
-        console.error("Error fetching donations:", error);
-        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
-    }
-}
+    return successResponse(res, {
+      message: DONATION_SUCCESS_MESSAGES.FETCH_ALL,
+      data: donations,
+      status: STATUS_CODES.OK,
+    });
+  } catch (error) {
+    console.error(DONATION_ERROR_MESSAGES.FETCH_ALL, error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.FETCH_ALL,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
 
 export const getDonationById = async (req, res) => {
-    try {
-        const donationId = req.params["id"];
-        const docRef = doc(db, "donation", donationId).withConverter(addCreatedTimestamps);
-        const docSnap = await getDoc(docRef);
+  try {
+    const donationId = req.params["donationId"];
+    const docRef = doc(db, "donation", donationId).withConverter(
+      addCreatedTimestamps
+    );
+    const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-            res.json({ id: docSnap.id, ...docSnap.data() });
-        } else {
-            res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
-        }
-    } catch (error) {
-        console.error("Error fetching donation:", error);
-        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
+    if (docSnap.exists()) {
+      return successResponse(res, {
+        message: DONATION_SUCCESS_MESSAGES.FETCH_ONE,
+        data: { id: docSnap.id, ...docSnap.data() },
+        status: STATUS_CODES.OK,
+      });
+    } else {
+      return errorResponse(res, {
+        message: DONATION_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
     }
-
-}
+  } catch (error) {
+    console.error(DONATION_ERROR_MESSAGES.FETCH_ONE, error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.FETCH_ONE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
 
 export const createDonation = async (req, res) => {
-    try {
-        const body = req.body;
-        const donationRef = collection(db, 'donation').withConverter(addCreatedTimestamps);
-        await addDoc(donationRef, body);
-        res.status(201).json({ message: "donation created successfully", id: donationRef.id });
-    } catch (error) {
-        console.error("Error creating donation:", error);
-        res.status(500).json({ message: "Error creating donation", error: error.message });
-    }
-
-}
+  try {
+    const body = req.body;
+    const donationRef = collection(db, "donation").withConverter(
+      addCreatedTimestamps
+    );
+    const docRef = await addDoc(donationRef, body);
+    return successResponse(res, {
+      message: DONATION_SUCCESS_MESSAGES.CREATE,
+      data: { id: docRef.id },
+      status: STATUS_CODES.CREATED,
+    });
+  } catch (error) {
+    console.error(DONATION_ERROR_MESSAGES.CREATE, error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.CREATE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
 
 export const updateDonation = async (req, res) => {
-    try {
-        const donationId = req.params["id"];
-        const upRef = doc(db, "donation", donationId).withConverter(addCreatedTimestamps);
-        const body = req.body;
+  try {
+    const donationId = req.params["donationId"];
+    const upRef = doc(db, "donation", donationId).withConverter(
+      addCreatedTimestamps
+    );
+    const body = req.body;
 
-        const docSnap = await getDoc(upRef);
-        if (!docSnap.exists()) {
-            return res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
-        }
-
-        await updateDoc(upRef, { ...body, updated_at: serverTimestamp() });
-        res.status(200).json({ message: "donation updated successfully", id: donationId });
-    } catch (error) {
-        console.error("Error updating donation:", error);
-        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
+    const docSnap = await getDoc(upRef);
+    if (!docSnap.exists()) {
+      return errorResponse(res, {
+        message: DONATION_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
     }
-}
+
+    // Excluir created_at del body si viene del frontend
+    const { created_at, ...fieldsToUpdate } = body;
+
+    await updateDoc(upRef, {
+      ...fieldsToUpdate,
+      updated_at: serverTimestamp(),
+    });
+    return successResponse(res, {
+      message: DONATION_SUCCESS_MESSAGES.UPDATE,
+      data: { id: donationId },
+      status: STATUS_CODES.OK,
+    });
+  } catch (error) {
+    console.error(DONATION_ERROR_MESSAGES.UPDATE, error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.UPDATE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
 
 export const deleteDonation = async (req, res) => {
-    try {
-        const donationId = req.params["id"];
-        const docRef = doc(db, "donation", donationId).withConverter(addCreatedTimestamps);
+  try {
+    const donationId = req.params["donationId"];
+    const docRef = doc(db, "donation", donationId).withConverter(
+      addCreatedTimestamps
+    );
 
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-            return res.status(404).send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
-        }
-
-        await deleteDoc(docRef);
-        res.status(200).json({ message: "donation deleted successfully", id: donationId });
-    } catch (error) {
-        console.error("Error deleting donation:", error);
-        res.status(500).send(`<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) {
+      return errorResponse(res, {
+        message: DONATION_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
     }
-}
+
+    await deleteDoc(docRef);
+    return successResponse(res, {
+      message: DONATION_SUCCESS_MESSAGES.DELETE,
+      data: { id: donationId },
+      status: STATUS_CODES.OK,
+    });
+  } catch (error) {
+    console.error(DONATION_ERROR_MESSAGES.DELETE, error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.DELETE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};

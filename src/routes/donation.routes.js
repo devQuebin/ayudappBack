@@ -1,20 +1,32 @@
-import express from 'express';
-import { getAllDonations, getDonationById, createDonation, updateDonation, deleteDonation } from '../controllers/donation.controller.js';
-
+import express from "express";
+import {
+  getAllDonations,
+  getDonationById,
+  createDonation,
+  updateDonation,
+  deleteDonation,
+} from "../controllers/donation.controller.js";
+import {
+  validateCreateDonation,
+  validateUpdateDonation,
+  validateParamDonationId,
+} from "../validators/donation.validator.js";
 
 const router = express.Router();
 
+router.get("/", getAllDonations);
 
+router.get("/:donationId", validateParamDonationId, getDonationById);
 
-router.get('/', getAllDonations);
+router.post("/", validateCreateDonation, createDonation);
 
-router.get('/:id', getDonationById);
+router.put(
+  "/:donationId",
+  validateParamDonationId,
+  validateUpdateDonation,
+  updateDonation
+);
 
-router.post('/', createDonation);
-
-router.put('/:id', updateDonation);
-
-router.delete('/:id', deleteDonation);
-
+router.delete("/:donationId", validateParamDonationId, deleteDonation);
 
 export default router;
