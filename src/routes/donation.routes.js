@@ -6,17 +6,27 @@ import {
   updateDonation,
   deleteDonation,
 } from "../controllers/donation.controller.js";
+import {
+  validateCreateDonation,
+  validateUpdateDonation,
+  validateParamDonationId,
+} from "../validators/donation.validator.js";
 
 const router = express.Router();
 
 router.get("/", getAllDonations);
 
-router.get("/:id", getDonationById);
+router.get("/:donationId", validateParamDonationId, getDonationById);
 
-router.post("/", createDonation);
+router.post("/", validateCreateDonation, createDonation);
 
-router.put("/:id", updateDonation);
+router.put(
+  "/:donationId",
+  validateParamDonationId,
+  validateUpdateDonation,
+  updateDonation
+);
 
-router.delete("/:id", deleteDonation);
+router.delete("/:donationId", validateParamDonationId, deleteDonation);
 
 export default router;

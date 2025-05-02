@@ -18,7 +18,7 @@ const router = express.Router();
 
 router.get("/", getAllCampaigns);
 
-router.get("/:id", validateParamCampaignId, getCampaignById);
+router.get("/:campaignId", validateParamCampaignId, getCampaignById);
 
 router.post(
   "/",
@@ -28,13 +28,13 @@ router.post(
 );
 
 router.put(
-  "/:id",
+  "/:campaignId",
   validateParamCampaignId,
   fieldDoesntExist("campaign", "name"),
   validateUpdateCampaign,
   updateCampaign
 );
 
-router.delete("/:id", validateParamCampaignId, deleteCampaign);
+router.delete("/:campaignId", validateParamCampaignId, deleteCampaign);
 
 export default router;
