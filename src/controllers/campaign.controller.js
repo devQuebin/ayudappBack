@@ -6,10 +6,16 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
+  serverTimestamp,
 } from "firebase/firestore";
 import { addCreatedTimestamps } from "../utils/firestore_utils.js";
 import db from "../config/firebase_config.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
+import { successResponse, errorResponse } from "../utils/response_utils.js";
+import {
+  CAMPAIGN_ERROR_MESSAGES,
+  CAMPAIGN_SUCCESS_MESSAGES,
+} from "../constants/messages.constants.js";
 
 export const createCampaign = async (req, res) => {
   try {
@@ -19,108 +25,179 @@ export const createCampaign = async (req, res) => {
       addCreatedTimestamps
     );
     await setDoc(campaignRef, body);
-    res
-      .status(STATUS_CODES.CREATED)
-      .json({ message: "Campaign created successfully", id: campaignRef.id });
+    return successResponse(res, {
+      message: CAMPAIGN_SUCCESS_MESSAGES.CREATE,
+      data: { id: campaignRef.id },
+      status: STATUS_CODES.CREATED,
+    });
   } catch (error) {
-    console.error("Error creating campaign:", error);
-    res
-      .status(INTERNAL_SERVER_ERROR)
-      .json({ message: "Error creating campaign", error: error.message });
+    console.error(CAMPAIGN_ERROR_MESSAGES.CREATE, error);
+    return errorResponse(res, {
+      message: CAMPAIGN_ERROR_MESSAGES.CREATE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
 export const getAllCampaigns = async (req, res) => {
   try {
-    const campaignRef = collection(db, "campaign");
+    const { startMonth, endMonth, campaignStartDate } = req.query;
+    const campaignRef = collection(db, "campaign").withConverter(
+      addCreatedTimestamps
+    );
     const querySnapshot = await getDocs(campaignRef);
     const campaigns = [];
+
     querySnapshot.forEach((doc) => {
-      campaigns.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      let match = true;
+
+      // Filtrado por año de campaña (start_date)
+      if (campaignStartDate) {
+        const startDate = data.start_date ? new Date(data.start_date) : null;
+        if (
+          !startDate ||
+          startDate.getFullYear() !== Number(campaignStartDate)
+        ) {
+          match = false;
+        }
+      }
+
+      // Filtrado por mes de inicio
+      if (startMonth) {
+        const startDate = data.start_date ? new Date(data.start_date) : null;
+        if (!startDate || startDate.getMonth() + 1 !== Number(startMonth)) {
+          match = false;
+        }
+      }
+
+      // Filtrado por mes de fin
+      if (endMonth) {
+        const endDate = data.end_date ? new Date(data.end_date) : null;
+        if (!endDate || endDate.getMonth() + 1 !== Number(endMonth)) {
+          match = false;
+        }
+      }
+
+      if (match) {
+        campaigns.push({ id: doc.id, ...data });
+      }
     });
-    res.json(campaigns);
+
+    return successResponse(res, {
+      message: CAMPAIGN_SUCCESS_MESSAGES.FETCH_ALL,
+      data: campaigns,
+      status: STATUS_CODES.OK,
+    });
   } catch (error) {
-    console.error("Error fetching campaigns:", error);
-    res
-      .status(INTERNAL_SERVER_ERROR)
-      .json({ message: "Error fetching campaigns" });
+    console.error(CAMPAIGN_ERROR_MESSAGES.FETCH_ALL, error);
+    return errorResponse(res, {
+      message: CAMPAIGN_ERROR_MESSAGES.FETCH_ALL,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
 export const getCampaignById = async (req, res) => {
   try {
     const campaignId = req.params["id"];
-    const docRef = doc(db, "campaign", campaignId);
+    const docRef = doc(db, "campaign", campaignId).withConverter(
+      addCreatedTimestamps
+    );
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      res.json({ id: docSnap.id, ...docSnap.data() });
+      return successResponse(res, {
+        message: CAMPAIGN_SUCCESS_MESSAGES.FETCH_ONE,
+        data: { id: docSnap.id, ...docSnap.data() },
+        status: STATUS_CODES.OK,
+      });
     } else {
-      res
-        .status(STATUS_CODES.NOT_FOUND)
-        .send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+      return errorResponse(res, {
+        message: CAMPAIGN_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
     }
   } catch (error) {
-    console.error("Error fetching campaign:", error);
-    res
-      .status(INTERNAL_SERVER_ERROR)
-      .send(
-        `<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`
-      );
+    console.error(CAMPAIGN_ERROR_MESSAGES.FETCH_ONE, error);
+    return errorResponse(res, {
+      message: CAMPAIGN_ERROR_MESSAGES.FETCH_ONE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
 export const updateCampaign = async (req, res) => {
   try {
     const campaignId = req.params["id"];
-    const upRef = doc(db, "campaign", campaignId).withConverter(
+    const docRef = doc(db, "campaign", campaignId).withConverter(
       addCreatedTimestamps
     );
     const body = req.body;
 
-    const docSnap = await getDoc(upRef);
+    const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) {
-      return res
-        .status(STATUS_CODES.NOT_FOUND)
-        .send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+      return errorResponse(res, {
+        message: CAMPAIGN_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
     }
 
-    await updateDoc(upRef, body);
-    res
-      .status(STATUS_CODES.OK)
-      .json({ message: "Campaign updated successfully", id: campaignId });
+    // Excluir created_at del body si viene del frontend
+    const { created_at, ...fieldsToUpdate } = body;
+
+    await updateDoc(docRef, {
+      ...fieldsToUpdate,
+      updated_at: serverTimestamp(),
+    });
+    return successResponse(res, {
+      message: CAMPAIGN_SUCCESS_MESSAGES.UPDATE,
+      data: { id: campaignId },
+      status: STATUS_CODES.OK,
+    });
   } catch (error) {
-    console.error("Error updating campaign:", error);
-    res
-      .status(INTERNAL_SERVER_ERROR)
-      .send(
-        `<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`
-      );
+    console.error(CAMPAIGN_ERROR_MESSAGES.UPDATE, error);
+    return errorResponse(res, {
+      message: CAMPAIGN_ERROR_MESSAGES.UPDATE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
   }
 };
 
 export const deleteCampaign = async (req, res) => {
   try {
     const campaignId = req.params["id"];
-    const docRef = doc(db, "campaign", campaignId);
+    const docRef = doc(db, "campaign", campaignId).withConverter(
+      addCreatedTimestamps
+    );
 
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) {
-      return res
-        .status(STATUS_CODES.NOT_FOUND)
-        .send(`<img src="https://http.cat/404" alt="404 Not Pawnd">`);
+      return errorResponse(res, {
+        message: CAMPAIGN_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
     }
 
     await deleteDoc(docRef);
-    res
-      .status(STATUS_CODES.OK)
-      .json({ message: "Campaign deleted successfully", id: campaignId });
+    return successResponse(res, {
+      message: CAMPAIGN_SUCCESS_MESSAGES.DELETE,
+      data: { id: campaignId },
+      status: STATUS_CODES.OK,
+    });
   } catch (error) {
-    console.error("Error deleting campaign:", error);
-    res
-      .status(INTERNAL_SERVER_ERROR)
-      .send(
-        `<img src="https://http.cat/500" alt="500 Internal Server Mewrror">`
-      );
+    console.error(CAMPAIGN_ERROR_MESSAGES.DELETE, error);
+    return errorResponse(res, {
+      message: CAMPAIGN_ERROR_MESSAGES.DELETE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
   }
 };
