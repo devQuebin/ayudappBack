@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 
 // Esquema para crear usuario
 const createUserSchema = Joi.object({
@@ -20,24 +21,24 @@ const createUserSchema = Joi.object({
     "string.empty": "La contraseña es obligatoria",
     "any.required": "La contraseña es obligatoria",
   }),
-  campaign_record: Joi.array().items(Joi.any()).optional(),
-  donation_record: Joi.array().items(Joi.any()).optional(),
+  campaign_records: Joi.array().items(Joi.any()).optional(),
+  donation_records: Joi.array().items(Joi.any()).optional(),
 }).options({ allowUnknown: false });
 
 // Esquema para validar param id (como middleware aparte)
-const paramIdSchema = Joi.object({
-  id: Joi.string()
-    .pattern(
-      /^([a-zA-Z0-9_-]{20,28}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/
-    )
-    .required()
-    .messages({
-      "string.pattern.base":
-        "El ID debe ser un UUID v4 o un ID de Firestore válido",
-      "string.empty": "El ID es obligatorio",
-      "any.required": "El ID es obligatorio",
-    }),
-});
+export const paramIdSchema = (paramName) =>
+  Joi.object({
+    [paramName]: Joi.string()
+      .pattern(
+        /^([a-zA-Z0-9_-]{20,28}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/
+      )
+      .required()
+      .messages({
+        "string.pattern.base": `El ${paramName} debe ser un UUID v4 o un ID de Firestore válido`,
+        "string.empty": `El ${paramName} es obligatorio`,
+        "any.required": `El ${paramName} es obligatorio`,
+      }),
+  });
 
 // Esquema para update (todos opcionales)
 const updateUserSchema = Joi.object({
@@ -59,7 +60,7 @@ const updateUserSchema = Joi.object({
 
 // Middleware genérico para validar body
 const validateBody =
-  (schema, statusCode = 422) =>
+  (schema, statusCode = STATUS_CODES.UNPROCESSABLE_ENTITY) =>
   (req, res, next) => {
     const { error } = schema.validate(req.body, { abortEarly: false });
     if (error) {
@@ -73,9 +74,9 @@ const validateBody =
     next();
   };
 
-// Middleware para validar params
-const validateParams =
-  (schema, statusCode = 400) =>
+// Middleware para validar params usando un esquema Joi.
+export const validateParams =
+  (schema, statusCode = STATUS_CODES.BAD_REQUEST) =>
   (req, res, next) => {
     const { error } = schema.validate(req.params, { abortEarly: false });
     if (error) {
@@ -90,6 +91,6 @@ const validateParams =
   };
 
 // Exporta los middlewares listos para usar en rutas
-export const validateCreateUser = validateBody(createUserSchema, 422);
-export const validateUpdateUser = validateBody(updateUserSchema, 422);
-export const validateParamIDRules = validateParams(paramIdSchema, 400);
+export const validateCreateUser = validateBody(createUserSchema);
+export const validateUpdateUser = validateBody(updateUserSchema);
+export const validateParamIDRules = validateParams(paramIdSchema("id"));
