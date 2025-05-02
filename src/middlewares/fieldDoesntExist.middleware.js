@@ -1,5 +1,6 @@
 import { collection, query, where, getDocs } from "firebase/firestore";
 import db from "../config/firebase_config.js";
+import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 
 /**
  * Middleware para validar que un campo (por ejemplo, email) no exista en la colección,
