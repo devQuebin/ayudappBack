@@ -4,6 +4,7 @@ import cors from "cors";
 import userRoutes from "./src/routes/user.routes.js";
 import donationRoutes from "./src/routes/donation.routes.js";
 import campaignRoutes from "./src/routes/campaign.routes.js";
+import authRoutes from "./src/routes/auth.routes.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRoutes);
 app.use("/donation", donationRoutes);
 app.use("/campaign", campaignRoutes);
+app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -44,6 +46,8 @@ app.get("/", (req, res) => {
     ...getRoutesFromRouter("/user", userRoutes),
     ...getRoutesFromRouter("/donation", donationRoutes),
     ...getRoutesFromRouter("/campaign", campaignRoutes),
+    ...getRoutesFromRouter("/auth", authRoutes),
+
   ];
 
   const tableRows = allRoutes
