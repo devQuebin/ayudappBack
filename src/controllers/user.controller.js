@@ -16,6 +16,7 @@ import {
   USER_ERROR_MESSAGES,
   USER_SUCCESS_MESSAGES,
 } from "../constants/messages.constants.js";
+import jwt from "jsonwebtoken";
 
 // Create a new user
 export const createUser = async (req, res) => {
@@ -190,6 +191,67 @@ export const getUsersByCampaign = async (req, res) => {
     console.error(USER_ERROR_MESSAGES.FETCH_USERS_BY_CAMPAIGN, error);
     return errorResponse(res, {
       message: USER_ERROR_MESSAGES.FETCH_USERS_BY_CAMPAIGN,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
+// Login user
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Busca el usuario por email
+    const usersRef = collection(db, "user").withConverter(addCreatedTimestamps);
+    const querySnapshot = await getDocs(usersRef);
+    let user = null;
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.email === email && data.password === password) {
+        user = { id: doc.id, ...data };
+      }
+    });
+
+    if (!user) {
+      return errorResponse(res, {
+        message: "Credenciales inválidas",
+        errors: null,
+        status: STATUS_CODES.UNAUTHORIZED,
+      });
+    }
+
+    // Genera el token JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        // Puedes agregar más campos si lo necesitas, como role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Estructura de usuario a devolver (sin password)
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      lastName: user.lastName,
+      email: user.email,
+      campaignRecords: user.campaignRecords || [],
+      donationRecords: user.donationRecords || [],
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    return successResponse(res, {
+      message: "Login exitoso",
+      data: { token, user: userResponse },
+      status: STATUS_CODES.OK,
+    });
+  } catch (error) {
+    return errorResponse(res, {
+      message: "Error al hacer login",
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
     });

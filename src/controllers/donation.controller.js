@@ -138,7 +138,7 @@ export const updateDonation = async (req, res) => {
 
     await updateDoc(upRef, {
       ...fieldsToUpdate,
-      updated_at: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.UPDATE,
