@@ -13,6 +13,7 @@ import {
 } from "../validators/campaign.validator.js";
 import { uniqueField } from "../middlewares/uniqueField.middleware.js";
 import { fieldDoesntExist } from "../middlewares/fieldDoesntExist.middleware.js";
+import { isAuthenticated } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.get("/:campaignId", validateParamCampaignId, getCampaignById);
 
 router.post(
   "/",
+  isAuthenticated,
   validateCreateCampaign,
   uniqueField("campaign", "name"),
   createCampaign
@@ -29,12 +31,18 @@ router.post(
 
 router.put(
   "/:campaignId",
+  isAuthenticated,
   validateParamCampaignId,
   fieldDoesntExist("campaign", "name"),
   validateUpdateCampaign,
   updateCampaign
 );
 
-router.delete("/:campaignId", validateParamCampaignId, deleteCampaign);
+router.delete(
+  "/:campaignId",
+  isAuthenticated,
+  validateParamCampaignId,
+  deleteCampaign
+);
 
 export default router;
