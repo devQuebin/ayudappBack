@@ -47,7 +47,22 @@ const updateUserSchema = Joi.object({
   donationRecord: Joi.array().items(Joi.any()).optional(),
 }).options({ allowUnknown: false });
 
+// Esquema para login
+const loginUserSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "string.email": "El email es inválido",
+    "string.empty": "El email es obligatorio",
+    "any.required": "El email es obligatorio",
+  }),
+  password: Joi.string().min(6).required().messages({
+    "string.min": "La contraseña debe tener al menos 6 caracteres",
+    "string.empty": "La contraseña es obligatoria",
+    "any.required": "La contraseña es obligatoria",
+  }),
+}).options({ allowUnknown: false });
+
 // Exporta los middlewares listos para usar en rutas
 export const validateCreateUser = validateBody(createUserSchema);
 export const validateUpdateUser = validateBody(updateUserSchema);
+export const validateLoginUser = validateBody(loginUserSchema);
 export const validateParamIDRules = validateParams(paramIdSchema("userId"));
