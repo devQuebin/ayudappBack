@@ -50,3 +50,4 @@ export const CAMPAIGN_ERROR_MESSAGES = {
   UPDATE: "Error updating campaign",
   DELETE: "Error deleting campaign",
 };
+

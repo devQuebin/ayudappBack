@@ -42,7 +42,7 @@ export const createCampaign = async (req, res) => {
 
 export const getAllCampaigns = async (req, res) => {
   try {
-    const { startMonth, endMonth, campaignStartDate } = req.query;
+    const { startMonth, endMonth, campaignYear } = req.query;
     const campaignRef = collection(db, "campaign").withConverter(
       addCreatedTimestamps
     );
@@ -54,17 +54,15 @@ export const getAllCampaigns = async (req, res) => {
       let match = true;
 
       // Filtrado por año de campaña (startDate)
-      if (campaignStartDate) {
+
+      if (campaignYear) {
         const startDate = data.startDate ? new Date(data.startDate) : null;
-        if (
-          !startDate ||
-          startDate.getFullYear() !== Number(campaignStartDate)
-        ) {
+        if (!startDate || startDate.getFullYear() !== Number(campaignYear)) {
           match = false;
         }
       }
 
-      // Filtrado por mes de inicio
+      // Filtrado por month de inicio
       if (startMonth) {
         const startDate = data.startDate ? new Date(data.startDate) : null;
         if (!startDate || startDate.getMonth() + 1 !== Number(startMonth)) {
@@ -72,7 +70,7 @@ export const getAllCampaigns = async (req, res) => {
         }
       }
 
-      // Filtrado por mes de fin
+      // Filtrado por month de fin
       if (endMonth) {
         const endDate = data.endDate ? new Date(data.endDate) : null;
         if (!endDate || endDate.getMonth() + 1 !== Number(endMonth)) {
@@ -148,12 +146,12 @@ export const updateCampaign = async (req, res) => {
       });
     }
 
-    // Excluir created_at del body si viene del frontend
-    const { created_at, ...fieldsToUpdate } = body;
+    // Excluir createdAt del body si viene del frontend
+    const { createdAt, ...fieldsToUpdate } = body;
 
     await updateDoc(docRef, {
       ...fieldsToUpdate,
-      updated_at: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
     return successResponse(res, {
       message: CAMPAIGN_SUCCESS_MESSAGES.UPDATE,

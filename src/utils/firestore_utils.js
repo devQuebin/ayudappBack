@@ -1,25 +1,26 @@
-import { serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp } from "firebase/firestore";
 
 export const addCreatedTimestamps = {
-    toFirestore: (docData) => {
-        return {
-            created_at: serverTimestamp(),
-            updated_at: serverTimestamp(),
-            ...docData,
-        }
-    },
-    fromFirestore: (snapshot, options) => {
-        const data = snapshot.data(options)
-        return {
-            id: snapshot.id,
-            ...data,
-            created_at: data.created_at && data.created_at.toDate
-                ? data.created_at.toDate().toISOString()
-                : null,
-            updated_at: data.updated_at && data.updated_at.toDate
-                ? data.updated_at.toDate().toISOString()
-                : null,
-        }
-    },
-}
-
+  toFirestore: (docData) => {
+    return {
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      ...docData,
+    };
+  },
+  fromFirestore: (snapshot, options) => {
+    const data = snapshot.data(options);
+    return {
+      id: snapshot.id,
+      ...data,
+      createdAt:
+        data.createdAt && data.createdAt.toDate
+          ? data.createdAt.toDate().toISOString()
+          : null,
+      updatedAt:
+        data.updatedAt && data.updatedAt.toDate
+          ? data.updatedAt.toDate().toISOString()
+          : null,
+    };
+  },
+};

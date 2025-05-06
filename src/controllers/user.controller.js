@@ -108,7 +108,7 @@ export const updateUser = async (req, res) => {
       });
     }
 
-    await updateDoc(docRef, { ...body, updated_at: serverTimestamp() });
+    await updateDoc(docRef, { ...body, updatedAt: serverTimestamp() });
     return successResponse(res, {
       message: USER_SUCCESS_MESSAGES.UPDATE_USER,
       data: { id: userId },
