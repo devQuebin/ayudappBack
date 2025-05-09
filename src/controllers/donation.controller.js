@@ -19,7 +19,7 @@ import {
 
 export const getAllDonations = async (req, res) => {
   try {
-    const { mes, año } = req.query;
+    const { month, year } = req.query;
     let donationsRef = collection(db, "donation").withConverter(
       addCreatedTimestamps
     );
@@ -29,13 +29,20 @@ export const getAllDonations = async (req, res) => {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       let match = true;
-      if (mes && año) {
-        match = data.created_at === `${mes} ${año}`;
-      } else if (mes) {
-        match = data.created_at.startsWith(mes);
-      } else if (año) {
-        match = data.created_at.endsWith(año);
+      if (month || year) {
+        if (!data.createdAt) {
+          match = false;
+        } else {
+          const date = new Date(data.createdAt);
+          if (month && date.getMonth() + 1 !== Number(month)) {
+            match = false;
+          }
+          if (year && date.getFullYear() !== Number(year)) {
+            match = false;
+          }
+        }
       }
+
       if (match) {
         donations.push({ id: doc.id, ...data });
       }
@@ -126,12 +133,12 @@ export const updateDonation = async (req, res) => {
       });
     }
 
-    // Excluir created_at del body si viene del frontend
-    const { created_at, ...fieldsToUpdate } = body;
+    // Excluir createdAt del body si viene del frontend
+    const { createdAt, ...fieldsToUpdate } = body;
 
     await updateDoc(upRef, {
       ...fieldsToUpdate,
-      updated_at: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.UPDATE,
