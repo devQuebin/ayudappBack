@@ -1,21 +1,22 @@
 import db from "../config/firebase_config.js";
+import { AUTH_ERROR_MESSAGES, AUTH_SUCCESS_MESSAGES, USER_ERROR_MESSAGES } from "../constants/messages.constants.js";
 
 // Registrar usuario
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const snapshot = await db.collection('users').where('email', '==', email).get();
+    const snapshot = await db.collection("users").where("email", "==", email).get();
 
     if (!snapshot.empty) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
+      return res.status(STATUS_CODE.BAD_REQUEST).json({ message: AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS });
     }
 
-    await db.collection('users').add({ email, password });
+    await db.collection("users").add({ email, password });
 
-    return res.status(201).json({ message: 'Usuario registrado exitosamente' });
+    return res.status(STATUS_CODE.CREATED).json({ message: AUTH_SUCCESS_MESSAGES.REGISTER });
   } catch (error) {
-    return res.status(500).json({ message: 'Error al registrar usuario', error });
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({ message: AUTH_ERROR_MESSAGES.REGISTER, error });
   }
 };
 
@@ -24,18 +25,18 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const snapshot = await db.collection('users')
-      .where('email', '==', email)
-      .where('password', '==', password)
+    const snapshot = await db.collection("users")
+      .where("email", "==", email)
+      .where("password", "==", password)
       .get();
 
     if (snapshot.empty) {
-      return res.status(401).json({ message: 'Credenciales incorrectas' });
+      return res.status(STATUS_CODE.UNAUTHORIZED).json({ message: AUTH_ERROR_MESSAGES.CREDENTIALS });
     }
 
-    return res.status(200).json({ message: 'Inicio de sesión exitoso' });
+    return res.status(STATUS_CODE.OK).json({ message: AUTH_SUCCESS_MESSAGES.LOGIN });
   } catch (error) {
-    return res.status(500).json({ message: 'Error al iniciar sesión', error });
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({ message: AUTH_ERROR_MESSAGES.LOGIN, error });
   }
 };
 

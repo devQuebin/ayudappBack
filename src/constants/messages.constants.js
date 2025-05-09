@@ -51,3 +51,17 @@ export const CAMPAIGN_ERROR_MESSAGES = {
   DELETE: "Error deleting campaign",
 };
 
+<<<<<<< Updated upstream
+=======
+export const AUTH_ERROR_MESSAGES = {
+  USER_ALREADY_EXISTS: "User Alredy exists",
+  REGISTER: "Error registering user",
+  CREDENTIALS: "Error Invalid username or password",
+  LOGIN: "Login Error",
+}
+
+export const AUTH_SUCCESS_MESSAGES = {
+  REGISTER: "User Register Successfully",
+  LOGIN: "Successful Login"
+}
+>>>>>>> Stashed changes

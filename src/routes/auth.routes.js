@@ -8,7 +8,7 @@ import {
 } from "../controllers/auth.controller.js";
 
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post("/register", registerUser);
+router.post("/login", loginUser);
 
 export default router;
