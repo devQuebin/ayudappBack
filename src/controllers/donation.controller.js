@@ -8,7 +8,7 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import db from "../config/firebase_config.js";
+import { db } from "../config/firebase_config.js";
 import { addCreatedTimestamps } from "../utils/firestore_utils.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 import { successResponse, errorResponse } from "../utils/response_utils.js";

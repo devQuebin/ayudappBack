@@ -1,47 +1,52 @@
-import db from "../config/firebase_config.js";
-import { 
-  AUTH_ERROR_MESSAGES, 
-  AUTH_SUCCESS_MESSAGES, 
+import { auth, db } from "../config/firebase_config.js";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from "firebase/auth";
+import {
+  AUTH_ERROR_MESSAGES,
+  AUTH_SUCCESS_MESSAGES
 } from "../constants/messages.constants.js";
+import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 
-// Registrar usuario
+//Registro de usuario
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const snapshot = await db.collection("users")
-      .where("email", "==", email)
-      .get();
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdToken();
 
-    if (!snapshot.empty) {
-      return res.status(STATUS_CODE.BAD_REQUEST).json({ message: AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS });
-    }
-
-    await db.collection("users").add({ email, password });
-
-    return res.status(STATUS_CODE.CREATED).json({ message: AUTH_SUCCESS_MESSAGES.REGISTER });
+    return res.status(STATUS_CODES.CREATED).json({
+      message: AUTH_SUCCESS_MESSAGES.REGISTER,
+      token,
+      uid: userCredential.user.uid
+    });
   } catch (error) {
-    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({ message: AUTH_ERROR_MESSAGES.REGISTER, error });
+    return res.status(STATUS_CODES.BAD_REQUEST).json({
+      message: AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS,
+      error: error.message
+    });
   }
 };
 
-// Iniciar sesión
+//Inicio de sesión
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const snapshot = await db.collection("users")
-      .where("email", "==", email)
-      .where("password", "==", password)
-      .get();
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await userCredential.user.getIdToken();
 
-    if (snapshot.empty) {
-      return res.status(STATUS_CODE.UNAUTHORIZED).json({ message: AUTH_ERROR_MESSAGES.CREDENTIALS });
-    }
-
-    return res.status(STATUS_CODE.OK).json({ message: AUTH_SUCCESS_MESSAGES.LOGIN });
+    return res.status(STATUS_CODES.OK).json({
+      message: AUTH_SUCCESS_MESSAGES.LOGIN,
+      token,
+      uid: userCredential.user.uid
+    });
   } catch (error) {
-    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({ message: AUTH_ERROR_MESSAGES.LOGIN, error });
+    return res.status(STATUS_CODES.UNAUTHORIZED).json({
+      message: AUTH_ERROR_MESSAGES.CREDENTIALS,
+      error: error.message
+    });
   }
 };
-
