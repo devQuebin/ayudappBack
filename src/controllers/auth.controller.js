@@ -1,12 +1,17 @@
 import db from "../config/firebase_config.js";
-import { AUTH_ERROR_MESSAGES, AUTH_SUCCESS_MESSAGES, USER_ERROR_MESSAGES } from "../constants/messages.constants.js";
+import { 
+  AUTH_ERROR_MESSAGES, 
+  AUTH_SUCCESS_MESSAGES, 
+} from "../constants/messages.constants.js";
 
 // Registrar usuario
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const snapshot = await db.collection("users").where("email", "==", email).get();
+    const snapshot = await db.collection("users")
+      .where("email", "==", email)
+      .get();
 
     if (!snapshot.empty) {
       return res.status(STATUS_CODE.BAD_REQUEST).json({ message: AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS });
