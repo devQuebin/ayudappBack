@@ -1,5 +1,5 @@
 import { collection, query, where, getDocs } from "firebase/firestore";
-import db from "../config/firebase_config.js";
+import { db } from "../config/firebase_config.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 /**
  * Middleware para validar la unicidad de un campo en una colección de Firestore.

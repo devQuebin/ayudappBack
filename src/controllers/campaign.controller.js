@@ -9,7 +9,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { addCreatedTimestamps } from "../utils/firestore_utils.js";
-import db from "../config/firebase_config.js";
+import { db } from "../config/firebase_config.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 import { successResponse, errorResponse } from "../utils/response_utils.js";
 import {
