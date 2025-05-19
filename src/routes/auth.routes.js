@@ -3,8 +3,8 @@ import express from "express";
 const router = express.Router();
 
 import {
-    registerUser, 
-    loginUser, 
+    registerUser,
+    loginUser,
 } from "../controllers/auth.controller.js";
 
 
