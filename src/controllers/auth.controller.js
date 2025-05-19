@@ -8,15 +8,15 @@ import {
   AUTH_SUCCESS_MESSAGES
 } from "../constants/messages.constants.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
+import { createUser } from "../user.controller.js";
 
 //Registro de usuario
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const token = await userCredential.user.getIdToken();
-
+    
     return res.status(STATUS_CODES.CREATED).json({
       message: AUTH_SUCCESS_MESSAGES.REGISTER,
       token,
