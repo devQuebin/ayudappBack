@@ -8,7 +8,6 @@ import {
   AUTH_SUCCESS_MESSAGES
 } from "../constants/messages.constants.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
-import { createUser } from "../user.controller.js";
 
 //Registro de usuario
 export const registerUser = async (req, res) => {
