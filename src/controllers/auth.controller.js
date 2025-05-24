@@ -8,22 +8,23 @@ import {
   AUTH_SUCCESS_MESSAGES
 } from "../constants/messages.constants.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
-import { createUser } from "../controllers/user.controller.js"; 
+import { collection, addDoc } from "firebase/firestore";
+import { addCreatedTimestamps } from "../utils/firestore_utils.js";
 
 //Registro de usuario
 export const registerUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { name, lastName, email, password } = req.body;
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const uid = userCredential.user.uid;
     const token = await userCredential.user.getIdToken();
 
-    //Guardo el usuario
-    await createUser(uid, { email });
+    const userRef = collection(db, "user").withConverter(addCreatedTimestamps);
+    const docRef = await addDoc(userRef, req.body);
     
     return res.status(STATUS_CODES.CREATED).json({
       message: AUTH_SUCCESS_MESSAGES.REGISTER,
-      token,
+      data: { id: docRef.id, name: name, lastName: lastName, email: email, token: token, uid: uid },
       uid: userCredential.user.uid
     });
   } catch (error) {
