@@ -20,7 +20,11 @@ import {
 export const createCampaign = async (req, res) => {
   try {
     const newId = crypto.randomUUID();
-    const body = req.body;
+    const body = {
+      ...req.body,
+      donorCount: 0,
+      totalRaised: 0,
+    }
     const campaignRef = doc(db, "campaign", newId).withConverter(
       addCreatedTimestamps
     );

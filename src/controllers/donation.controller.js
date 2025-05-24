@@ -7,9 +7,14 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "../config/firebase_config.js";
-import { addCreatedTimestamps } from "../utils/firestore_utils.js";
+import { 
+  addCreatedTimestamps,
+  updateCampaignDonationStats
+} from "../utils/firestore_utils.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 import { successResponse, errorResponse } from "../utils/response_utils.js";
 import {
@@ -94,13 +99,54 @@ export const getDonationById = async (req, res) => {
   }
 };
 
+
+export const getDonationByDonor = async (req, res) => {
+  try {
+    const donorId = req.params["donorId"];
+    const campaignsRef = collection(db, "donation");
+    const q = query(campaignsRef, where("donorId", "==", donorId));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      return successResponse(res, {
+        message: DONATION_SUCCESS_MESSAGES.FETCH_ONE,
+        status: STATUS_CODES.OK,
+      });
+    } else {
+      return errorResponse(res, {
+        message: DONATION_ERROR_MESSAGES.NOT_FOUND,
+        errors: null,
+        status: STATUS_CODES.NOT_FOUND,
+      });
+    }
+  } catch (error) {
+    console.error(DONATION_ERROR_MESSAGES.FETCH_ONE, error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.FETCH_ONE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
+
 export const createDonation = async (req, res) => {
   try {
     const body = req.body;
-    const donationRef = collection(db, "donation").withConverter(
-      addCreatedTimestamps
-    );
+    const { campaignId, donorId, amount } = req.body;
+    const donationRef = collection(db, "donation").withConverter(addCreatedTimestamps);
     const docRef = await addDoc(donationRef, body);
+
+    // Verificar si es un nuevo donante
+    const campaignsRef = collection(db, "donation");
+    const q = query(campaignsRef, where("donorId", "==", donorId), where("campaignId", "==", campaignId));
+    const querySnapshot = await getDocs(q);
+
+    const isNewDonor = (querySnapshot.size === 1);
+
+    // Actualizar campaña
+    await updateCampaignDonationStats(campaignId, amount, isNewDonor);
+
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.CREATE,
       data: { id: docRef.id },
