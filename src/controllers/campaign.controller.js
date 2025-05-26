@@ -1,201 +1,179 @@
+// filepath: c:\Repos\ayudappBack\src\controllers\campaign.controller.js
 import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  serverTimestamp,
-} from "firebase/firestore";
-import { addCreatedTimestamps } from "../utils/firestore_utils.js";
-import { db } from "../config/firebase_config.js";
-import { STATUS_CODES } from "../constants/statusCodes.constants.js";
-import { successResponse, errorResponse } from "../utils/response_utils.js";
+  createRecordAdmin,
+  getAllRecordsAdmin,
+  getRecordByIdAdmin,
+  updateRecordAdmin,
+  deleteRecordAdmin,
+  formatDatabaseData,
+} from "../utils/admin_database_utils.js"
+import { STATUS_CODES } from "../constants/statusCodes.constants.js"
+import { successResponse, errorResponse } from "../utils/response_utils.js"
 import {
   CAMPAIGN_ERROR_MESSAGES,
   CAMPAIGN_SUCCESS_MESSAGES,
-} from "../constants/messages.constants.js";
+} from "../constants/messages.constants.js"
+import crypto from "crypto"
 
 export const createCampaign = async (req, res) => {
   try {
-    const newId = crypto.randomUUID();
-    const body = req.body;
-    const campaignRef = doc(db, "campaign", newId).withConverter(
-      addCreatedTimestamps
-    );
-    await setDoc(campaignRef, body);
+    const newId = crypto.randomUUID()
+    const body = req.body
+    const campaignPath = "campaigns"
+
+    // Crear el nuevo registro con un ID generado usando Admin SDK
+    const result = await createRecordAdmin(campaignPath, newId, body)
+
     return successResponse(res, {
       message: CAMPAIGN_SUCCESS_MESSAGES.CREATE,
-      data: { id: campaignRef.id },
+      data: { id: newId },
       status: STATUS_CODES.CREATED,
-    });
+    })
   } catch (error) {
-    console.error(CAMPAIGN_ERROR_MESSAGES.CREATE, error);
+    console.error(CAMPAIGN_ERROR_MESSAGES.CREATE, error)
     return errorResponse(res, {
       message: CAMPAIGN_ERROR_MESSAGES.CREATE,
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-    });
+    })
   }
-};
+}
 
 export const getAllCampaigns = async (req, res) => {
   try {
-    const { startMonth, endMonth, campaignYear } = req.query;
-    const campaignRef = collection(db, "campaign").withConverter(
-      addCreatedTimestamps
-    );
-    const querySnapshot = await getDocs(campaignRef);
-    const campaigns = [];
+    const { startMonth, endMonth, campaignYear } = req.query
+    const campaignPath = "campaigns"
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      let match = true;
+    // Obtener todas las campañas usando Admin SDK
+    const allCampaigns = await getAllRecordsAdmin(campaignPath)
+    const campaigns = []
+
+    // Filtrar las campañas según los criterios
+    allCampaigns.forEach((campaign) => {
+      let match = true
 
       // Filtrado por año de campaña (startDate)
-
       if (campaignYear) {
-        const startDate = data.startDate ? new Date(data.startDate) : null;
+        const startDate = campaign.startDate
+          ? new Date(campaign.startDate)
+          : null
         if (!startDate || startDate.getFullYear() !== Number(campaignYear)) {
-          match = false;
+          match = false
         }
       }
 
       // Filtrado por month de inicio
       if (startMonth) {
-        const startDate = data.startDate ? new Date(data.startDate) : null;
+        const startDate = campaign.startDate
+          ? new Date(campaign.startDate)
+          : null
         if (!startDate || startDate.getMonth() + 1 !== Number(startMonth)) {
-          match = false;
+          match = false
         }
       }
 
       // Filtrado por month de fin
       if (endMonth) {
-        const endDate = data.endDate ? new Date(data.endDate) : null;
+        const endDate = campaign.endDate ? new Date(campaign.endDate) : null
         if (!endDate || endDate.getMonth() + 1 !== Number(endMonth)) {
-          match = false;
+          match = false
         }
       }
 
       if (match) {
-        campaigns.push({ id: doc.id, ...data });
+        campaigns.push(campaign)
       }
-    });
+    })
 
     return successResponse(res, {
       message: CAMPAIGN_SUCCESS_MESSAGES.FETCH_ALL,
       data: campaigns,
       status: STATUS_CODES.OK,
-    });
+    })
   } catch (error) {
-    console.error(CAMPAIGN_ERROR_MESSAGES.FETCH_ALL, error);
+    console.error(CAMPAIGN_ERROR_MESSAGES.FETCH_ALL, error)
     return errorResponse(res, {
       message: CAMPAIGN_ERROR_MESSAGES.FETCH_ALL,
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-    });
+    })
   }
-};
+}
 
 export const getCampaignById = async (req, res) => {
   try {
-    const campaignId = req.params["campaignId"];
-    const docRef = doc(db, "campaign", campaignId).withConverter(
-      addCreatedTimestamps
-    );
-    const docSnap = await getDoc(docRef);
+    const campaignId = req.params["campaignId"]
+    const campaignPath = "campaigns"
 
-    if (docSnap.exists()) {
+    // Obtener la campaña por ID usando Admin SDK
+    const campaign = await getRecordByIdAdmin(campaignPath, campaignId)
+
+    if (campaign) {
       return successResponse(res, {
         message: CAMPAIGN_SUCCESS_MESSAGES.FETCH_ONE,
-        data: { id: docSnap.id, ...docSnap.data() },
+        data: campaign,
         status: STATUS_CODES.OK,
-      });
+      })
     } else {
       return errorResponse(res, {
         message: CAMPAIGN_ERROR_MESSAGES.NOT_FOUND,
         errors: null,
         status: STATUS_CODES.NOT_FOUND,
-      });
+      })
     }
   } catch (error) {
-    console.error(CAMPAIGN_ERROR_MESSAGES.FETCH_ONE, error);
+    console.error(CAMPAIGN_ERROR_MESSAGES.FETCH_ONE, error)
     return errorResponse(res, {
       message: CAMPAIGN_ERROR_MESSAGES.FETCH_ONE,
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-    });
+    })
   }
-};
+}
 
 export const updateCampaign = async (req, res) => {
   try {
-    const campaignId = req.params["campaignId"];
-    const docRef = doc(db, "campaign", campaignId).withConverter(
-      addCreatedTimestamps
-    );
-    const body = req.body;
+    const campaignId = req.params["campaignId"]
+    const campaignPath = "campaigns"
+    const body = req.body
 
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      return errorResponse(res, {
-        message: CAMPAIGN_ERROR_MESSAGES.NOT_FOUND,
-        errors: null,
-        status: STATUS_CODES.NOT_FOUND,
-      });
-    }
+    // Actualizar la campaña usando Admin SDK
+    await updateRecordAdmin(campaignPath, campaignId, body)
 
-    // Excluir createdAt del body si viene del frontend
-    const { createdAt, ...fieldsToUpdate } = body;
-
-    await updateDoc(docRef, {
-      ...fieldsToUpdate,
-      updatedAt: serverTimestamp(),
-    });
     return successResponse(res, {
       message: CAMPAIGN_SUCCESS_MESSAGES.UPDATE,
       data: { id: campaignId },
       status: STATUS_CODES.OK,
-    });
+    })
   } catch (error) {
-    console.error(CAMPAIGN_ERROR_MESSAGES.UPDATE, error);
+    console.error(CAMPAIGN_ERROR_MESSAGES.UPDATE, error)
     return errorResponse(res, {
       message: CAMPAIGN_ERROR_MESSAGES.UPDATE,
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-    });
+    })
   }
-};
+}
 
 export const deleteCampaign = async (req, res) => {
   try {
-    const campaignId = req.params["campaignId"];
-    const docRef = doc(db, "campaign", campaignId).withConverter(
-      addCreatedTimestamps
-    );
+    const campaignId = req.params["campaignId"]
+    const campaignPath = "campaigns"
 
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      return errorResponse(res, {
-        message: CAMPAIGN_ERROR_MESSAGES.NOT_FOUND,
-        errors: null,
-        status: STATUS_CODES.NOT_FOUND,
-      });
-    }
+    // Eliminar la campaña usando Admin SDK
+    await deleteRecordAdmin(campaignPath, campaignId)
 
-    await deleteDoc(docRef);
     return successResponse(res, {
       message: CAMPAIGN_SUCCESS_MESSAGES.DELETE,
       data: { id: campaignId },
       status: STATUS_CODES.OK,
-    });
+    })
   } catch (error) {
-    console.error(CAMPAIGN_ERROR_MESSAGES.DELETE, error);
+    console.error(CAMPAIGN_ERROR_MESSAGES.DELETE, error)
     return errorResponse(res, {
       message: CAMPAIGN_ERROR_MESSAGES.DELETE,
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
-    });
+    })
   }
-};
+}
