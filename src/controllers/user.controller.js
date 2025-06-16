@@ -257,3 +257,15 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const { uid, email, name, lastName } = req.user;
+    return res.status(200).json({ uid, email, name, lastName });
+  } catch (error) {
+    return res.status(500).json({
+      message: "No se pudo obtener el perfil del usuario",
+      error: error.message,
+    });
+  }
+};

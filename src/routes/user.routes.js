@@ -7,6 +7,7 @@ import {
   deleteUser,
   getUsersByCampaign,
   loginUser,
+  getCurrentUser
 } from "../controllers/user.controller.js";
 
 import {
@@ -28,6 +29,8 @@ const router = express.Router();
 
 // Get all users
 router.get("/", getAllUsers);
+// Get current logged-in user
+router.get("/me", isAuthenticated, getCurrentUser);
 // Get user by ID
 router.get("/:userId", validateParams(paramIdSchema("userId")), getUserById);
 // Create a new user
