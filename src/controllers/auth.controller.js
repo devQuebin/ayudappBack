@@ -8,8 +8,11 @@ import {
   AUTH_SUCCESS_MESSAGES
 } from "../constants/messages.constants.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
 import { addCreatedTimestamps } from "../utils/firestore_utils.js";
+import jwt from "jsonwebtoken";
+
+
 
 //Registro de usuario
 export const registerUser = async (req, res) => {
@@ -41,17 +44,45 @@ export const loginUser = async (req, res) => {
 
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const token = await userCredential.user.getIdToken();
+    const uid = userCredential.user.uid;
 
-    return res.status(STATUS_CODES.OK).json({
-      message: AUTH_SUCCESS_MESSAGES.LOGIN,
+    // Buscar los datos del usuario en Firestore
+    const userRef = doc(db, "user", uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return res.status(404).json({ message: "Usuario no encontrado en Firestore" });
+    }
+
+    const userData = userSnap.data();
+
+    // Crear JWT propio (este sí lo puede verificar isAuthenticated)
+    const token = jwt.sign(
+      {
+        uid,
+        email,
+        name: userData.name,
+        lastName: userData.lastName
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: "Inicio de sesión exitoso",
       token,
-      uid: userCredential.user.uid
+      user: {
+        uid,
+        email,
+        name: userData.name,
+        lastName: userData.lastName
+      }
     });
   } catch (error) {
-    return res.status(STATUS_CODES.UNAUTHORIZED).json({
-      message: AUTH_ERROR_MESSAGES.CREDENTIALS,
+    return res.status(401).json({
+      message: "Credenciales inválidas",
       error: error.message
     });
   }
 };
+
