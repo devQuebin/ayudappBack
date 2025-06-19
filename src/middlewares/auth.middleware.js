@@ -8,6 +8,12 @@ export const isAuthenticated = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
   if (token === "devGiveItBack") {
+    req.user = {
+    uid: "dev",
+    email: "dev@example.com",
+    name: "Dev",
+    lastName: "User"
+  };
     return next();
   }
 
