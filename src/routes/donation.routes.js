@@ -21,7 +21,7 @@ router.get("/", getAllDonations);
 
 router.get("/:donationId", validateParamDonationId, getDonationById);
 
-router.get("/by-donor/:donorId", getDonationByDonor);
+router.get("/donor/:donorId", getDonationByDonor);
 
 router.post("/", isAuthenticated, validateCreateDonation, createDonation);
 
