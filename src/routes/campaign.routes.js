@@ -1,25 +1,25 @@
-import express from "express";
+import express from "express"
 import {
   getAllCampaigns,
   getCampaignById,
   createCampaign,
   updateCampaign,
   deleteCampaign,
-} from "../controllers/campaign.controller.js";
+} from "../controllers/campaign.controller.js"
 import {
   validateCreateCampaign,
   validateParamCampaignId,
   validateUpdateCampaign,
-} from "../validators/campaign.validator.js";
-import { uniqueField } from "../middlewares/uniqueField.middleware.js";
-import { fieldDoesntExist } from "../middlewares/fieldDoesntExist.middleware.js";
-import { isAuthenticated } from "../middlewares/auth.middleware.js";
+} from "../validators/campaign.validator.js"
+import { uniqueField } from "../middlewares/uniqueField.middleware.js"
+import { fieldDoesntExist } from "../middlewares/fieldDoesntExist.middleware.js"
+import { isAuthenticated } from "../middlewares/auth.middleware.js"
 
-const router = express.Router();
+const router = express.Router()
 
-router.get("/", getAllCampaigns);
+router.get("/", getAllCampaigns)
 
-router.get("/:campaignId", validateParamCampaignId, getCampaignById);
+router.get("/:campaignId", validateParamCampaignId, getCampaignById)
 
 router.post(
   "/",
@@ -27,22 +27,16 @@ router.post(
   validateCreateCampaign,
   uniqueField("campaign", "name"),
   createCampaign
-);
+)
 
-router.put(
+router.post(
   "/:campaignId",
   isAuthenticated,
-  validateParamCampaignId,
   fieldDoesntExist("campaign", "name"),
   validateUpdateCampaign,
   updateCampaign
-);
+)
 
-router.delete(
-  "/:campaignId",
-  isAuthenticated,
-  validateParamCampaignId,
-  deleteCampaign
-);
+router.delete("/:campaignId", isAuthenticated, deleteCampaign)
 
-export default router;
+export default router

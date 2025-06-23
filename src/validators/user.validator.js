@@ -1,9 +1,9 @@
-import Joi from "joi";
+import Joi from "joi"
 import {
   paramIdSchema,
   validateBody,
   validateParams,
-} from "./common.validator.js";
+} from "./common.validator.js"
 
 // Esquema para crear usuario
 const createUserSchema = Joi.object({
@@ -27,7 +27,7 @@ const createUserSchema = Joi.object({
   }),
   campaignRecords: Joi.array().items(Joi.any()).optional(),
   donationRecords: Joi.array().items(Joi.any()).optional(),
-}).options({ allowUnknown: false });
+}).options({ allowUnknown: false })
 
 // Esquema para update (todos opcionales)
 const updateUserSchema = Joi.object({
@@ -43,9 +43,9 @@ const updateUserSchema = Joi.object({
   password: Joi.string().min(6).optional().messages({
     "string.min": "La contraseña debe tener al menos 6 caracteres",
   }),
-  campaignRecord: Joi.array().items(Joi.any()).optional(),
-  donationRecord: Joi.array().items(Joi.any()).optional(),
-}).options({ allowUnknown: false });
+  campaignRecords: Joi.array().items(Joi.any()).optional(),
+  donationRecords: Joi.array().items(Joi.any()).optional(),
+}).options({ allowUnknown: false })
 
 // Esquema para login
 const loginUserSchema = Joi.object({
@@ -59,10 +59,10 @@ const loginUserSchema = Joi.object({
     "string.empty": "La contraseña es obligatoria",
     "any.required": "La contraseña es obligatoria",
   }),
-}).options({ allowUnknown: false });
+}).options({ allowUnknown: false })
 
 // Exporta los middlewares listos para usar en rutas
-export const validateCreateUser = validateBody(createUserSchema);
-export const validateUpdateUser = validateBody(updateUserSchema);
-export const validateLoginUser = validateBody(loginUserSchema);
-export const validateParamIDRules = validateParams(paramIdSchema("userId"));
+export const validateCreateUser = validateBody(createUserSchema)
+export const validateUpdateUser = validateBody(updateUserSchema)
+export const validateLoginUser = validateBody(loginUserSchema)
+export const validateParamIDRules = validateParams(paramIdSchema("userId"))

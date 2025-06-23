@@ -1,55 +1,49 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "../config/firebase_config.js";
-import { 
-  addCreatedTimestamps,
-  updateCampaignDonationStats
-} from "../utils/firestore_utils.js";
+  createRecordAdmin,
+  getAllRecordsAdmin,
+  getRecordByIdAdmin,
+  updateRecordAdmin,
+  deleteRecordAdmin,
+  formatDatabaseData,
+} from "../utils/admin_database_utils.js";
 import { STATUS_CODES } from "../constants/statusCodes.constants.js";
 import { successResponse, errorResponse } from "../utils/response_utils.js";
 import {
   DONATION_ERROR_MESSAGES,
   DONATION_SUCCESS_MESSAGES,
 } from "../constants/messages.constants.js";
+import crypto from "crypto";
 
 export const getAllDonations = async (req, res) => {
   try {
     const { month, year } = req.query;
-    let donationsRef = collection(db, "donation").withConverter(
-      addCreatedTimestamps
-    );
-    let donations = [];
+    const donationPath = "donations";
 
-    const querySnapshot = await getDocs(donationsRef);
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
+    // Obtener todas las donaciones usando Admin SDK
+    const allDonations = await getAllRecordsAdmin(donationPath);
+    const donations = [];
+
+    // Filtrar las donaciones según los criterios
+    allDonations.forEach((donation) => {
       let match = true;
+
       if (month || year) {
-        if (!data.createdAt) {
+        const createdAt = donation.createdAt ? new Date(donation.createdAt) : null;
+
+        if (!createdAt) {
           match = false;
         } else {
-          const date = new Date(data.createdAt);
-          if (month && date.getMonth() + 1 !== Number(month)) {
+          if (month && createdAt.getMonth() + 1 !== Number(month)) {
             match = false;
           }
-          if (year && date.getFullYear() !== Number(year)) {
+          if (year && createdAt.getFullYear() !== Number(year)) {
             match = false;
           }
         }
       }
 
       if (match) {
-        donations.push({ id: doc.id, ...data });
+        donations.push(donation);
       }
     });
 
@@ -71,15 +65,15 @@ export const getAllDonations = async (req, res) => {
 export const getDonationById = async (req, res) => {
   try {
     const donationId = req.params["donationId"];
-    const docRef = doc(db, "donation", donationId).withConverter(
-      addCreatedTimestamps
-    );
-    const docSnap = await getDoc(docRef);
+    const donationPath = "donations";
 
-    if (docSnap.exists()) {
+    // Obtener la donación por ID usando Admin SDK
+    const donation = await getRecordByIdAdmin(donationPath, donationId);
+
+    if (donation) {
       return successResponse(res, {
         message: DONATION_SUCCESS_MESSAGES.FETCH_ONE,
-        data: { id: docSnap.id, ...docSnap.data() },
+        data: donation,
         status: STATUS_CODES.OK,
       });
     } else {
@@ -102,24 +96,15 @@ export const getDonationById = async (req, res) => {
 
 export const createDonation = async (req, res) => {
   try {
+    const newId = crypto.randomUUID();
     const body = req.body;
-    const { campaignId, donorId, amount } = req.body;
-    const donationRef = collection(db, "donation").withConverter(addCreatedTimestamps);
-    const docRef = await addDoc(donationRef, body);
+    const donationPath = "donations";
 
-    // Verificar si es un nuevo donante
-    const campaignsRef = collection(db, "donation");
-    const q = query(campaignsRef, where("donorId", "==", donorId), where("campaignId", "==", campaignId));
-    const querySnapshot = await getDocs(q);
-
-    const isNewDonor = (querySnapshot.size === 1);
-
-    // Actualizar campaña
-    await updateCampaignDonationStats(campaignId, amount, isNewDonor);
-    
+    // Crear el nuevo registro con un ID generado usando Admin SDK
+    const result = await createRecordAdmin(donationPath, newId, body);
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.CREATE,
-      data: { id: docRef.id },
+      data: { id: newId },
       status: STATUS_CODES.CREATED,
     });
   } catch (error) {
@@ -135,27 +120,12 @@ export const createDonation = async (req, res) => {
 export const updateDonation = async (req, res) => {
   try {
     const donationId = req.params["donationId"];
-    const upRef = doc(db, "donation", donationId).withConverter(
-      addCreatedTimestamps
-    );
+    const donationPath = "donations";
     const body = req.body;
 
-    const docSnap = await getDoc(upRef);
-    if (!docSnap.exists()) {
-      return errorResponse(res, {
-        message: DONATION_ERROR_MESSAGES.NOT_FOUND,
-        errors: null,
-        status: STATUS_CODES.NOT_FOUND,
-      });
-    }
+    // Actualizar la donación usando Admin SDK
+    await updateRecordAdmin(donationPath, donationId, body);
 
-    // Excluir createdAt del body si viene del frontend
-    const { createdAt, ...fieldsToUpdate } = body;
-
-    await updateDoc(upRef, {
-      ...fieldsToUpdate,
-      updatedAt: serverTimestamp(),
-    });
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.UPDATE,
       data: { id: donationId },
@@ -174,20 +144,11 @@ export const updateDonation = async (req, res) => {
 export const deleteDonation = async (req, res) => {
   try {
     const donationId = req.params["donationId"];
-    const docRef = doc(db, "donation", donationId).withConverter(
-      addCreatedTimestamps
-    );
+    const donationPath = "donations";
 
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      return errorResponse(res, {
-        message: DONATION_ERROR_MESSAGES.NOT_FOUND,
-        errors: null,
-        status: STATUS_CODES.NOT_FOUND,
-      });
-    }
+    // Eliminar la donación usando Admin SDK
+    await deleteRecordAdmin(donationPath, donationId);
 
-    await deleteDoc(docRef);
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.DELETE,
       data: { id: donationId },
