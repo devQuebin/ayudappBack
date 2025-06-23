@@ -9,6 +9,7 @@ import {
   getUserProfile,
 } from "../controllers/user.controller.js"
 
+
 import {
   validateCreateUser,
   validateUpdateUser,
@@ -26,7 +27,9 @@ import { isAuthenticated } from "../middlewares/auth.middleware.js"
 const router = express.Router()
 
 // Get all users
+
 router.get("/", getAllUsers)
+
 // Get user by ID
 router.get("/:userId", validateParams(paramIdSchema("userId")), getUserById)
 // Create a new user

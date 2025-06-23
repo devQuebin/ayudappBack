@@ -17,13 +17,13 @@ import crypto from "crypto"
 
 export const createCampaign = async (req, res) => {
   try {
+
     const newId = crypto.randomUUID()
     const body = req.body
     const campaignPath = "campaigns"
 
     // Crear el nuevo registro con un ID generado usando Admin SDK
     const result = await createRecordAdmin(campaignPath, newId, body)
-
     return successResponse(res, {
       message: CAMPAIGN_SUCCESS_MESSAGES.CREATE,
       data: { id: newId },

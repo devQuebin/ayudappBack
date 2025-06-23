@@ -16,9 +16,11 @@ const firebaseConfig = {
   databaseURL: process.env.FIREBASE_DATABASE_URL,
 }
 
+
 const firebaseApp = initializeApp(firebaseConfig)
 //const db = getFirestore(firebaseApp);
 const db = getDatabase(firebaseApp)
 const auth = getAuth(firebaseApp)
+
 
 export { auth, db }

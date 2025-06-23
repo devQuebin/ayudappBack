@@ -93,6 +93,7 @@ export const getDonationById = async (req, res) => {
   }
 };
 
+
 export const createDonation = async (req, res) => {
   try {
     const newId = crypto.randomUUID();
@@ -101,7 +102,6 @@ export const createDonation = async (req, res) => {
 
     // Crear el nuevo registro con un ID generado usando Admin SDK
     const result = await createRecordAdmin(donationPath, newId, body);
-
     return successResponse(res, {
       message: DONATION_SUCCESS_MESSAGES.CREATE,
       data: { id: newId },
@@ -158,6 +158,57 @@ export const deleteDonation = async (req, res) => {
     console.error(DONATION_ERROR_MESSAGES.DELETE, error);
     return errorResponse(res, {
       message: DONATION_ERROR_MESSAGES.DELETE,
+      errors: error.message,
+      status: STATUS_CODES.INTERNAL_SERVER_ERROR,
+    });
+  }
+};
+
+export const getDonationByDonor = async (req, res) => {
+  try {
+    const donorId = req.params["donorId"];
+
+    const donationsRef = collection(db, "donation");
+    const q = query(donationsRef, where("donorId", "==", donorId));
+    const querySnapshot = await getDocs(q);
+
+    const donations = [];
+
+    for (const docSnap of querySnapshot.docs) {
+      const donationData = docSnap.data();
+      const campaignId = donationData.campaignId;
+
+      // Buscar nombre de la campaña
+      let campaignName = "Campaña desconocida";
+      if (campaignId) {
+        const campaignDoc = await getDoc(doc(db, "campaign", campaignId));
+        if (campaignDoc.exists()) {
+          const campaignData = campaignDoc.data();
+          campaignName = campaignData.name || campaignName;
+        }
+      }
+
+      // Convertir fecha
+      const formattedDate = donationData.createdAt?.toDate?.().toISOString() || null;
+
+      donations.push({
+        id: docSnap.id,
+        amount: donationData.amount,
+        date: formattedDate,
+        campaignName,
+      });
+    }
+
+    return successResponse(res, {
+      message: DONATION_SUCCESS_MESSAGES.FETCH_ONE,
+      data: donations,
+      status: STATUS_CODES.OK,
+    });
+
+  } catch (error) {
+    console.error("Error al obtener donaciones por donorId:", error);
+    return errorResponse(res, {
+      message: DONATION_ERROR_MESSAGES.FETCH_ONE,
       errors: error.message,
       status: STATUS_CODES.INTERNAL_SERVER_ERROR,
     });

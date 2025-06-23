@@ -5,6 +5,7 @@ import {
   createDonation,
   updateDonation,
   deleteDonation,
+  getDonationByDonor,
 } from "../controllers/donation.controller.js";
 import {
   validateCreateDonation,
@@ -19,6 +20,8 @@ const router = express.Router();
 router.get("/", getAllDonations);
 
 router.get("/:donationId", validateParamDonationId, getDonationById);
+
+router.get("/donor/:donorId", getDonationByDonor);
 
 router.post("/", isAuthenticated, validateCreateDonation, createDonation);
 
